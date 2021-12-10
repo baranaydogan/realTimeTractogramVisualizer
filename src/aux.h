@@ -1,15 +1,16 @@
 #ifndef SRC_AUX_H_
 #define SRC_AUX_H_
 
-#include "rttvis_app.h"
+#include "rttvis_gui.h"
 
 #include <vtkLightKit.h>
 
+// Enable for OSRay
 // #include <vtkOSPRayPass.h>
 // #include <vtkOSPRayRendererNode.h>
 // #include <vtkOSPRayLightNode.h>
 
-
+// Enable for OptiX
 // #include <vtkOptiXRendererNode.h>
 // #include <vtkOptiXPass.h>
 
@@ -22,6 +23,7 @@
 #include <vtkRenderer.h>
 
 void addSphere(double *picked, vtkSmartPointer<vtkActor> actor);
-RTTVIS_APP* startRenderer(vtkSmartPointer<vtkRenderer> renderer);
+
+RTTVIS* startRenderer(vtkSmartPointer<vtkRenderer> renderer);
 
 #endif

@@ -30,7 +30,6 @@
 #include <vtkInteractorStyleTrackballCamera.h>
 
 #include "brainmesh_handler.h"
-#include "aux.h"
 
 typedef enum {
 	WHITE,

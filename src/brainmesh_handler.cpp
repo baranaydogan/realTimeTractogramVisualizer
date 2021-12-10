@@ -217,12 +217,12 @@ vtkSmartPointer<vtkActor> Brain::getCurrentPeelActor() {
 
 }
 
-Brain::Brain(char *T1_fname, char *mask_fname) {
+Brain::Brain(std::string T1_fname, std::string mask_fname) {
 
 	// Read reference image
 	std::cout << "Reading T1..." << std::flush;
 	auto T1_reader = vtkSmartPointer<vtkNIFTIImageReader>::New();
-	T1_reader->SetFileName(T1_fname);
+	T1_reader->SetFileName(T1_fname.c_str());
 	T1_reader->Update();
 
 	refImage = vtkSmartPointer<vtkImageData>::New();
@@ -232,7 +232,7 @@ Brain::Brain(char *T1_fname, char *mask_fname) {
 	// Read for reference surface
 	std::cout << "Reading mask..." << std::flush;
 	auto mask_reader = vtkSmartPointer<vtkNIFTIImageReader>::New();
-	mask_reader->SetFileName(mask_fname);
+	mask_reader->SetFileName(mask_fname.c_str());
 	mask_reader->Update();
 
 	std::cout << "Done" << std::endl << std::flush;

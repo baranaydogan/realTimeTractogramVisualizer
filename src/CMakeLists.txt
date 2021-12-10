@@ -2,6 +2,8 @@ PROJECT(RealTimeTractogramVisualizer)
 
 cmake_minimum_required(VERSION 3.15.0)
 
+set (CMAKE_CXX_STANDARD 17)
+
 list(INSERT CMAKE_MODULE_PATH 0 "/usr/lib/cmake/OpenVDB")
 
 SET(COMPILER_FLAG_TO_ENABLE_MULTITHREADING    "-D ENABLE_MULTITHREADING")
@@ -41,29 +43,29 @@ else ()
   return ()
 endif()
 
-SET(rttvis_app_SRCS 
+SET(rttvis_gui_SRCS 
 	main.cpp
-	rttvis_app.cpp
+	rttvis_gui.cpp
 	trekker_interface.cpp
 	brainmesh_handler.cpp
 	aux.cpp
 	)
 
-SET(rttvis_app_MOC_HDRS 
-	rttvis_app.h	
+SET(rttvis_gui_MOC_HDRS 
+	rttvis_gui.h	
 	)
 
-SET(rttvis_app_UI 
-	rttvis_app.ui
+SET(rttvis_gui_UI 
+	rttvis_gui.ui
 	)
 
-QT6_WRAP_CPP(rttvis_app_MOC_SRCS ${rttvis_app_MOC_HDRS})
-QT6_WRAP_UI(rttvis_app_UI_HDRS ${rttvis_app_UI})
+QT6_WRAP_CPP(rttvis_gui_MOC_SRCS ${rttvis_gui_MOC_HDRS})
+QT6_WRAP_UI(rttvis_gui_UI_HDRS ${rttvis_gui_UI})
 
 ADD_EXECUTABLE(rttvis
-	${rttvis_app_SRCS}
-	${rttvis_app_MOC_SRCS}
-	${rttvis_app_UI_HDRS})
+	${rttvis_gui_SRCS}
+	${rttvis_gui_MOC_SRCS}
+	${rttvis_gui_UI_HDRS})
 
 target_link_libraries(rttvis
     pthread

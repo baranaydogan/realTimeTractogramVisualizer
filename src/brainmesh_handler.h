@@ -45,7 +45,7 @@
 
 class Brain {
 public:
-	Brain(char *T1_fname, char *mask_fname);
+	Brain(std::string T1_fname, std::string mask_fname);
 	~Brain() { };
 	vtkSmartPointer<vtkPolyData>  					refSurface;
 	vtkSmartPointer<vtkImageData>					refImage;

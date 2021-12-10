@@ -19,7 +19,7 @@ void addSphere(double *picked, vtkSmartPointer<vtkActor> actor) {
 	actor->GetProperty()->SetOpacity(1);
 }
 
-RTTVIS_APP* startRenderer(vtkSmartPointer<vtkRenderer> renderer) {
+RTTVIS* startRenderer(vtkSmartPointer<vtkRenderer> renderer) {
 
 	// Prep light
 	auto light = vtkSmartPointer<vtkLightKit>::New();
@@ -63,7 +63,7 @@ RTTVIS_APP* startRenderer(vtkSmartPointer<vtkRenderer> renderer) {
 	auto window = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
 	window->AddRenderer(renderer);
 
-	RTTVIS_APP* dialog = new RTTVIS_APP;
+	RTTVIS* dialog = new RTTVIS;
 
 	dialog->addWindow(window);
 	dialog->show();
