@@ -1,4 +1,6 @@
 #include "brainmesh_handler.h"
+#include "rttvis_gui.h"
+#include "ui_rttvis_gui.h"
 
 vtkSmartPointer<vtkPolyData> cleanMesh(vtkSmartPointer<vtkPolyData> inp) {
 	auto cleaned = vtkSmartPointer<vtkCleanPolyData>::New();
@@ -127,7 +129,11 @@ void Brain::mapImageOnCurrentPeel() {
 
 void Brain::peelDown() {
 
-	std::cout << "Peeling down: " << std::flush;
+	Ui::RTTVIS_GUI ui;
+
+	// std::cout << "Peeling down: " << std::flush;
+	// ui.progressText->setText("Peeling down");
+
 	for (int i=0; i<numberOfPeels; i++) {
 		sliceDown();
 		mapImageOnCurrentPeel();
@@ -142,10 +148,11 @@ void Brain::peelDown() {
 		//		peelActors.push_back(newPeelActor);
 
 		currentPeelNo++;
-		std::cout << currentPeelNo << " " << std::flush;
+		// std::cout << currentPeelNo << " " << std::flush;
+		// ui.progressBar->setValue(currentPeelNo+3);
 	}
 
-	std::cout << std::endl;
+	// std::cout << std::endl;
 }
 
 vtkSmartPointer<vtkActor> Brain::getPeelActor(int p) {
@@ -217,28 +224,34 @@ vtkSmartPointer<vtkActor> Brain::getCurrentPeelActor() {
 
 }
 
-Brain::Brain(std::string T1_fname, std::string mask_fname) {
+Brain::Brain(std::string T1_fname, std::string mask_fname, void* _rttvis) {
+
+	rttvis 		= _rttvis;
+
+	RTTVIS* rtt	= static_cast<RTTVIS*>(_rttvis);
 
 	// Read reference image
-	std::cout << "Reading T1..." << std::flush;
+	// std::cout << "Reading T1..." << std::flush;
+	rtt->ui.progressText->setText("Reading T1");
 	auto T1_reader = vtkSmartPointer<vtkNIFTIImageReader>::New();
 	T1_reader->SetFileName(T1_fname.c_str());
 	T1_reader->Update();
+	rtt->ui.progressBar->setValue(1);
 
 	refImage = vtkSmartPointer<vtkImageData>::New();
 	refImage = T1_reader->GetOutput();
 
 
 	// Read for reference surface
-	std::cout << "Reading mask..." << std::flush;
+	// std::cout << "Reading mask..." << std::flush;
+	// ui.progressText->setText("Reading Mask");
 	auto mask_reader = vtkSmartPointer<vtkNIFTIImageReader>::New();
 	mask_reader->SetFileName(mask_fname.c_str());
 	mask_reader->Update();
+	// ui.progressBar->setValue(2);
 
-	std::cout << "Done" << std::endl << std::flush;
-
-
-	std::cout << "Preparing brain surface..." << std::flush;
+	// std::cout << "Preparing brain surface..." << std::flush;
+	// ui.progressText->setText("Preparing surface mesh");
 	auto mc = vtkSmartPointer<vtkContourFilter>::New();
 	mc->SetInputConnection(mask_reader->GetOutputPort());
 	mc->SetValue(0, 1);
@@ -273,8 +286,8 @@ Brain::Brain(std::string T1_fname, std::string mask_fname) {
 
 
 	auto sFormMatrix 					= vtkSmartPointer<vtkMatrix4x4>::New();
-	sFormMatrix 						= T1_reader->GetQFormMatrix();
-	// sFormMatrix 						= T1_reader->GetSFormMatrix();
+	// sFormMatrix 						= T1_reader->GetQFormMatrix();
+	sFormMatrix 						= T1_reader->GetSFormMatrix();
 
 	auto refImageSpace2_xyz_transform 	= vtkSmartPointer<vtkTransform>::New();
 	refImageSpace2_xyz_transform->SetMatrix(sFormMatrix);
@@ -301,9 +314,12 @@ Brain::Brain(std::string T1_fname, std::string mask_fname) {
 	getCurrentPeelActor();
 	peelActors.push_back(currentPeelActor);
 
-	std::cout << "Done" << std::endl << std::flush;
+	// std::cout << "Done" << std::endl << std::flush;
 
 	numberOfPeels = 30;
+	// ui.progressBar->setValue(3);
+
+	// Start peeling
 	peelDown();
 
 }
@@ -343,7 +359,7 @@ vtkSmartPointer<vtkPolyData> brain_downsample(vtkSmartPointer<vtkPolyData> inp) 
 
 vtkSmartPointer<vtkPolyData> readBrain(char *brain_fname) {
 
-	std::cout << "Reading brain mesh... " << std::flush;
+	// std::cout << "Reading brain mesh... " << std::flush;
 
 	std::string fname = std::string(brain_fname);
 	auto reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
@@ -362,7 +378,7 @@ vtkSmartPointer<vtkPolyData> readBrain(char *brain_fname) {
 //	writer->SetInputData(surface);
 //	writer->Write();
 
-	std::cout<<"Done" << std::endl;
+	// std::cout<<"Done" << std::endl;
 
 	return surface;
 

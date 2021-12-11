@@ -1,5 +1,6 @@
 #include "trekker_interface.h"
 #include "aux.h"
+#include "rttvis_gui.h"
 
 namespace MULTITHREADER {
 std::condition_variable  exit_cv;
@@ -114,7 +115,11 @@ vtkSmartPointer<vtkActor> getTrkActor(std::vector<Coordinate> trk, TrkColor* trk
 
 void getStreamlineForROC(TrackerWithActor *trackerWithActor) {
     trackerWithActor->tracker->track(trackerWithActor->seed);
-    *trackerWithActor->actor = getTrkActor(trackerWithActor->tracker->streamline->coordinates,trackerWithActor->trkColor,trackerWithActor->cycle);
+	if (trackerWithActor->tracker->streamline->status==STREAMLINE_GOOD)
+    	*trackerWithActor->actor = getTrkActor(trackerWithActor->tracker->streamline->coordinates,trackerWithActor->trkColor,trackerWithActor->cycle);
+	else
+		*trackerWithActor->actor = NULL;
+
 }
 
 
@@ -156,15 +161,17 @@ void getTrkActorsInParallel(Coordinate* seed,int nthreads, vtkSmartPointer<vtkAc
 
 
 void vtkTimerCallback::Initialize(
-		Brain*                                     _brain,
-        Trekker*                                   _trekker,
-		vtkSmartPointer<vtkRenderWindowInteractor> _interactor) {
+		Brain*   _brain,
+        Trekker* _trekker,
+		void*  	 _rttvis) {
+
+
 
 	std::cout << "Initializing viewer..." << std::flush;
 
 	picker 				= vtkSmartPointer<vtkCellPicker>::New();
 	picker->InitializePickList();
-	interactor 			= _interactor;
+	interactor 			= static_cast<RTTVIS*>(_rttvis)->getWindowInteractor();
 
 	// Setup brain
 	brain 				= _brain;

@@ -4,6 +4,8 @@
 #include <QString>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
+#include <qcheckbox.h>
+#include <qcombobox.h>
 
 RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
 
@@ -16,7 +18,11 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
             QString tmp = QFileDialog::getOpenFileName(this,tr("Load T1"), "", tr("Nifti image (*.nii *.nii.gz)"));
             ui.fname_T1_line->setText(tmp);
             fname_T1 = tmp.toStdString();
+            if ((ui.fname_T1_line->text()!="N/A") && (ui.fname_Mask_line->text()!="N/A") && (ui.fname_FOD_line->text()!="N/A") && (ui.fname_ACT_line->text()!="N/A")) {
+                ui.StartTracker->setEnabled(true);
             }
+        }
+
     );
 
     connect(
@@ -26,7 +32,10 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
             QString tmp = QFileDialog::getOpenFileName(this,tr("Load Mask"), "", tr("Nifti image (*.nii *.nii.gz)"));
             ui.fname_Mask_line->setText(tmp);
             fname_Mask = tmp.toStdString();
+            if ((ui.fname_T1_line->text()!="N/A") && (ui.fname_Mask_line->text()!="N/A") && (ui.fname_FOD_line->text()!="N/A") && (ui.fname_ACT_line->text()!="N/A")) {
+                ui.StartTracker->setEnabled(true);
             }
+        }
     );
 
     connect(
@@ -36,7 +45,10 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
             QString tmp = QFileDialog::getOpenFileName(this,tr("Load FOD"), "", tr("Nifti image (*.nii *.nii.gz)"));
             ui.fname_FOD_line->setText(tmp);
             fname_FOD = tmp.toStdString();
+            if ((ui.fname_T1_line->text()!="N/A") && (ui.fname_Mask_line->text()!="N/A") && (ui.fname_FOD_line->text()!="N/A") && (ui.fname_ACT_line->text()!="N/A")) {
+                ui.StartTracker->setEnabled(true);
             }
+        }
     );
 
     connect(
@@ -46,7 +58,10 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
             QString tmp = QFileDialog::getOpenFileName(this,tr("Load ACT"), "", tr("Nifti image (*.nii *.nii.gz)"));
             ui.fname_ACT_line->setText(tmp);
             fname_ACT = tmp.toStdString();
+            if ((ui.fname_T1_line->text()!="N/A") && (ui.fname_Mask_line->text()!="N/A") && (ui.fname_FOD_line->text()!="N/A") && (ui.fname_ACT_line->text()!="N/A")) {
+                ui.StartTracker->setEnabled(true);
             }
+        }
     );
 
     connect(
@@ -54,7 +69,7 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
         &QPushButton::clicked,
         [&](){
             startRealTimeTracker();
-            }
+        }
     );
 
     // PARAMETERS
@@ -74,11 +89,181 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         [&](double val){
             trekker->minLength(val);
-            std::cout << "Setting minLength to " << val << std::endl;
+            // std::cout << "minLength: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_maxLength,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+            trekker->maxLength(val);
+            // std::cout << "maxLength: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_stepSize,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+            trekker->stepSize(val);
+            // std::cout << "stepSize: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_minRadiusOfCurvature,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+            trekker->minRadiusOfCurvature(val);
+            // std::cout << "minRadiusOfCurvature: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_dataSupportExponent,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+            trekker->dataSupportExponent(val);
+            // std::cout << "dataSupportExponent: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_writeInterval,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [&](int val){
+            trekker->writeInterval(val);
+            // std::cout << "writeInterval: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_atMaxLength,
+        QOverload<const QString&>::of(&QComboBox::currentTextChanged),
+        [&](const QString& val){
+            if (val=="atMaxLength") {
+                trekker->atMaxLength("discard");
+                // std::cout << "atMaxLength: discard" << std::endl;
+                ui.txt_atMaxLength->setCurrentText("discard");
+            } else {
+                trekker->atMaxLength(val.toStdString());
+                // std::cout << "atMaxLength: " << val.toStdString() << std::endl;
+            }
         }
     );
     
+    connect(
+        ui.txt_directionality,
+        QOverload<const QString&>::of(&QComboBox::currentTextChanged),
+        [&](const QString& val){
+            if (val=="directionality") {
+                trekker->directionality("two_sided");
+                // std::cout << "directionality: two_sided" << std::endl;
+                ui.txt_directionality->setCurrentText("two_sided");
+            } else {
+                trekker->directionality(val.toStdString());
+                // std::cout << "directionality: " << val.toStdString() << std::endl;
+            }
+        }
+    );
 
+    //Advanced
+    connect(
+        ui.txt_maxEstInterval,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [&](int val){
+            trekker->maxEstInterval(val);
+            // std::cout << "maxEstInterval: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_initMaxEstTrials,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [&](int val){
+            trekker->initMaxEstTrials(val);
+            // std::cout << "initMaxEstTrials: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_propMaxEstTrials,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [&](int val){
+            trekker->propMaxEstTrials(val);
+            // std::cout << "propMaxEstTrials: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_maxSamplingPerStep,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [&](int val){
+            trekker->maxSamplingPerStep(val);
+            // std::cout << "maxSamplingPerStep: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.check_useBestAtInit,
+        QOverload<int>::of(&QCheckBox::stateChanged),
+        [&](int val){
+            if (val==0) {
+                trekker->useBestAtInit(false);
+                // std::cout << "useBestAtInit: false" << std::endl;
+            } else {
+                trekker->useBestAtInit(false);
+                // std::cout << "useBestAtInit: true" << std::endl;
+            }
+                
+        }
+    );
+
+    connect(
+        ui.txt_probeLength,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+            trekker->probeLength(val);
+            // std::cout << "probeLength: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_probeRadius,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+            trekker->probeRadius(val);
+            // std::cout << "probeRadius: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_probeCount,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [&](int val){
+            trekker->probeCount(val);
+            // std::cout << "probeCount: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_probeQuality,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [&](int val){
+            trekker->probeQuality(val);
+            // std::cout << "probeQuality: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_ignoreWeakLinks,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+            trekker->ignoreWeakLinks(val);
+            // std::cout << "ignoreWeakLinks: " << val << std::endl;
+        }
+    );
 
 }
 
@@ -86,25 +271,19 @@ void RTTVIS::startRealTimeTracker()
 {
 
     // Disable push buttons so they can't be run again in this session
-    ui.fname_T1_line->setDisabled(true);
-    ui.fname_Mask_line->setDisabled(true);
-    ui.fname_FOD_line->setDisabled(true);
-    ui.fname_ACT_line->setDisabled(true);
-    ui.push_T1->setDisabled(true);
-    ui.push_Mask->setDisabled(true);
-    ui.push_FOD->setDisabled(true);
-    ui.push_ACT->setDisabled(true);
-    ui.push_start->setDisabled(true);
-    ui.FOD_orderOfDirections->setDisabled(true);
-    ui.FOD_discretization->setDisabled(true);
+    ui.InputImages->setDisabled(true);
+    ui.step1_label->setDisabled(true);
 
     // Prepare brain mesh and peels
-	brain = new Brain(fname_T1,fname_Mask);
+	brain = new Brain(fname_T1,fname_Mask,static_cast<void*>(this));
     
 	// Prepare trekker
-    std::cout << "Preparing trekker... " << std::endl << std::flush ;
+    // std::cout << "Preparing trekker... " << std::endl << std::flush ;
+    ui.progressText->setText("Preparing trekker");
+    ui.progressBar->setValue(40);
+    std::string dir = (ui.FOD_orderOfDirections->currentText()=="Order Of Directions") ? "XYZ" : ui.FOD_orderOfDirections->currentText().toStdString();
 
-    trekker = new Trekker(fname_FOD, ui.FOD_orderOfDirections->currentText().toStdString(), ui.FOD_discretization->isChecked());
+    trekker = new Trekker(fname_FOD, dir, ui.FOD_discretization->isChecked());
     
 
     //Seeding
@@ -146,7 +325,7 @@ void RTTVIS::startRealTimeTracker()
     // Prepare user interface
 	vtkSmartPointer<vtkTimerCallback> realTimePointer;
 	realTimePointer = vtkSmartPointer<vtkTimerCallback>::New();
-	realTimePointer->Initialize(brain,trekker,this->getWindowInteractor());
+	realTimePointer->Initialize(brain,trekker,static_cast<void*>(this));
 	this->getWindowInteractor()->AddObserver(vtkCommand::TimerEvent, realTimePointer);
 	this->getWindowInteractor()->AddObserver(vtkCommand::EndInteractionEvent, realTimePointer);
 	this->getWindowInteractor()->AddObserver(vtkCommand::MouseMoveEvent, realTimePointer);
@@ -167,6 +346,8 @@ void RTTVIS::startRealTimeTracker()
     ui.txt_maxLength->setValue(250);
     ui.txt_stepSize->setValue(0.03150);
     ui.txt_minRadiusOfCurvature->setValue(0.625);
+    ui.txt_minFODamp->setValue(0.0);
+    ui.txt_minFODamp->setDisabled(true);
     ui.txt_dataSupportExponent->setValue(0.5);
     ui.txt_writeInterval->setValue(50);
     ui.txt_atMaxLength->setCurrentText("discard");
@@ -184,5 +365,8 @@ void RTTVIS::startRealTimeTracker()
     ui.txt_probeCount->setValue(1);
     ui.txt_probeQuality->setValue(3);
     ui.txt_ignoreWeakLinks->setValue(0);
+
+    ui.tabWidget->setEnabled(true);
+    ui.step3_label->setEnabled(true);
 
 }

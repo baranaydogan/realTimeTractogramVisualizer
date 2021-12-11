@@ -93,9 +93,9 @@ public:
 
 
 	void Initialize(
-			Brain* 									   _brain,
-            Trekker*                                   _trekker,
-			vtkSmartPointer<vtkRenderWindowInteractor> _interactor);
+			Brain* 		_brain,
+            Trekker*    _trekker,
+			void* 		_rttvis);
 
 	void Destroy() {
 		delete[] tmpactors;

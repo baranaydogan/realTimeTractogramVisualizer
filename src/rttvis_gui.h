@@ -30,7 +30,6 @@ public:
         return ui.qvtkOpenGLStereoWidget->interactor();
     };
 
-
     // Input image file names
     std::string fname_T1;
     std::string fname_Mask;
@@ -39,15 +38,11 @@ public:
 
     void startRealTimeTracker();
 
+    Ui::RTTVIS_GUI ui;
 
-private:
-   
-   Ui::RTTVIS_GUI ui;
+    Brain*   brain;
+    Trekker* trekker;
 
-   Brain*   brain;
-   Trekker* trekker;
-
-   
 };
 
 #endif

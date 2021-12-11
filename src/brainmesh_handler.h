@@ -45,7 +45,7 @@
 
 class Brain {
 public:
-	Brain(std::string T1_fname, std::string mask_fname);
+	Brain(std::string T1_fname, std::string mask_fname, void* _rttvis);
 	~Brain() { };
 	vtkSmartPointer<vtkPolyData>  					refSurface;
 	vtkSmartPointer<vtkImageData>					refImage;
@@ -65,9 +65,10 @@ public:
 	vtkSmartPointer<vtkActor> getPeelActor(int p);
 
 private:
-	void peelDown();
-	void mapImageOnCurrentPeel();
-	void sliceDown();
+	void  peelDown();
+	void  mapImageOnCurrentPeel();
+	void  sliceDown();
+	void* rttvis;
 };
 
 vtkSmartPointer<vtkPolyData> readBrain(char *brain_fname);
