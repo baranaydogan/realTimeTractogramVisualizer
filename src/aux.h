@@ -22,7 +22,7 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkRenderer.h>
 
-void addSphere(double *picked, vtkSmartPointer<vtkActor> actor);
+void addSphere(double *picked, vtkSmartPointer<vtkActor> actor, float sradius);
 
 RTTVIS* startRenderer(vtkSmartPointer<vtkRenderer> renderer);
 

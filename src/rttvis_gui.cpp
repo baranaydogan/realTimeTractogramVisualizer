@@ -6,10 +6,13 @@
 #include <QDoubleSpinBox>
 #include <qcheckbox.h>
 #include <qcombobox.h>
+#include <QTimer>
 
 RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
 
 	ui.setupUi(this);
+
+    clipboard = QApplication::clipboard();
 
     connect(
         ui.push_T1, 
@@ -74,7 +77,65 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
 
     // PARAMETERS
 
-    //Seeding
+    // Visualization
+
+    connect(
+        ui.txt_peelNo,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [&](int val){
+            looper->peelNo = ui.txt_peelNo->value();
+			looper->updatePeel();
+        }
+    );
+
+    
+    connect(
+        ui.txt_maxStreamlineCount,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [&](int val){
+           looper->setMaxShown(val);
+        }
+    );
+
+    connect(
+        ui.txt_batchCount,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [&](int val){
+            if (val>ui.txt_maxStreamlineCount->value())
+                looper->setBatchSize(ui.txt_maxStreamlineCount->value());
+            else
+                looper->setBatchSize(val);
+        }
+    );
+
+    
+    connect(
+        ui.txt_tubeRadius,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+           looper->setTubeRadius(val);
+        }
+    );
+
+    connect(
+        ui.txt_addOpacity,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+           looper->setAddedOpacity(val);
+        }
+    );
+
+    connect(
+        ui.txt_seed_radius,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+           looper->setSeedRadius(val);
+        }
+    );
+    
+
+    // Tracking
+
     connect(
         ui.txt_seed_maxTrials,
         QOverload<int>::of(&QSpinBox::valueChanged),
@@ -83,7 +144,6 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
         }
     );
 
-    // Tracking
     connect(
         ui.txt_minLength,
         QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -265,6 +325,35 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
         }
     );
 
+    // Center view
+    connect(ui.push_centerView, 
+        &QPushButton::clicked,
+        [&](){
+
+            looper->interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->ResetCamera();
+			looper->interactor->InvokeEvent(vtkCommand::LeftButtonPressEvent);
+			looper->interactor->InvokeEvent(vtkCommand::LeftButtonReleaseEvent);
+
+            QString prevInfo = ui.txt_info->text(); 
+            ui.txt_info->setText("View centered");
+            QTimer::singleShot(3000, this, [this,prevInfo](){ ui.txt_info->setText(prevInfo); });
+        }
+    );
+
+    // Copy to clipboard
+    connect(ui.push_copyToClipboard, 
+        &QPushButton::clicked,
+        [&](){
+
+            clipboard->clear();
+            clipboard->setText(ui.txt_coordinates->text());
+
+            QString prevInfo = ui.txt_info->text();          
+            ui.txt_info->setText("Coordinates copied");
+            QTimer::singleShot(3000, this, [this,prevInfo](){ ui.txt_info->setText(prevInfo); });
+        }
+    );
+
 }
 
 void RTTVIS::startRealTimeTracker()
@@ -272,18 +361,22 @@ void RTTVIS::startRealTimeTracker()
 
     // Disable push buttons so they can't be run again in this session
     ui.InputImages->setDisabled(true);
-    ui.step1_label->setDisabled(true);
+    ui.StartTracker->setDisabled(true);
+    ui.push_start->setDisabled(true);
+    
 
     // Prepare brain mesh and peels
 	brain = new Brain(fname_T1,fname_Mask,static_cast<void*>(this));
     
 	// Prepare trekker
     // std::cout << "Preparing trekker... " << std::endl << std::flush ;
-    ui.progressText->setText("Preparing trekker");
-    ui.progressBar->setValue(40);
+    ui.progressText->setText("Preparing Trekker (this might take some time)");
+    ui.progressText->update();
     std::string dir = (ui.FOD_orderOfDirections->currentText()=="Order Of Directions") ? "XYZ" : ui.FOD_orderOfDirections->currentText().toStdString();
-
     trekker = new Trekker(fname_FOD, dir, ui.FOD_discretization->isChecked());
+    ui.progressBar->setValue(100);
+    ui.progressText->setText("Ready");
+    ui.progressBar->setDisabled(true);
     
 
     //Seeding
@@ -318,55 +411,70 @@ void RTTVIS::startRealTimeTracker()
     trekker->pathway_discard_if_ends_inside(fname_ACT,1);   // wm
     trekker->pathway_discard_if_enters(fname_ACT,0);        // csf
 
-    trekker->printParameters();
+    // trekker->printParameters();
 	
     std::cout << std::endl << std::flush ;    
     
     // Prepare user interface
-	vtkSmartPointer<vtkTimerCallback> realTimePointer;
-	realTimePointer = vtkSmartPointer<vtkTimerCallback>::New();
-	realTimePointer->Initialize(brain,trekker,static_cast<void*>(this));
-	this->getWindowInteractor()->AddObserver(vtkCommand::TimerEvent, realTimePointer);
-	this->getWindowInteractor()->AddObserver(vtkCommand::EndInteractionEvent, realTimePointer);
-	this->getWindowInteractor()->AddObserver(vtkCommand::MouseMoveEvent, realTimePointer);
-	this->getWindowInteractor()->RemoveObservers(vtkCommand::MouseWheelBackwardEvent);
-	this->getWindowInteractor()->AddObserver(vtkCommand::MouseWheelBackwardEvent, realTimePointer);
-	this->getWindowInteractor()->RemoveObservers(vtkCommand::MouseWheelForwardEvent);
-	this->getWindowInteractor()->AddObserver(vtkCommand::MouseWheelForwardEvent, realTimePointer);
-	this->getWindowInteractor()->AddObserver(vtkCommand::KeyPressEvent, realTimePointer);
-	this->getWindowInteractor()->CreateRepeatingTimer(10); // Repeats the loop every 1 milliseconds
+	looper = vtkSmartPointer<vtkTimerCallback>::New();
+	looper->Initialize(brain,trekker,static_cast<void*>(this));
 
     // Update parameters in GUI
 
-    // Seeding
-    ui.txt_seed_maxTrials->setValue(1);
+    // Visualization
+    ui.txt_peelNo->setMaximum(brain->numberOfPeels);
+    ui.txt_peelNo->setValue(looper->peelNo);
+    ui.txt_seed_radius->setValue(looper->seedRadius);
+    ui.txt_maxStreamlineCount->setValue(looper->maxAllowedToShow);
+    ui.txt_batchCount->setValue(looper->batchSize);
+    ui.txt_tubeRadius->setValue(looper->tubeRadius);
+    ui.txt_addOpacity->setValue(looper->addedOpacity);
     
     // Tracking
-    ui.txt_minLength->setValue(10);
-    ui.txt_maxLength->setValue(250);
-    ui.txt_stepSize->setValue(0.03150);
-    ui.txt_minRadiusOfCurvature->setValue(0.625);
-    ui.txt_minFODamp->setValue(0.0);
+    ui.txt_numberOfThreads->setValue(trekker->getNumberOfThreads());
+    ui.txt_seed_maxTrials->setValue(trekker->getSeed_maxTrials());
+    ui.txt_minLength->setValue(trekker->getMinLength());
+    ui.txt_maxLength->setValue(trekker->getMaxLength());
+    ui.txt_stepSize->setValue(trekker->getStepSize());
+    ui.txt_minRadiusOfCurvature->setValue(trekker->getMinRadiusOfCurvature());
+    ui.txt_minFODamp->setValue(0);
     ui.txt_minFODamp->setDisabled(true);
-    ui.txt_dataSupportExponent->setValue(0.5);
-    ui.txt_writeInterval->setValue(50);
-    ui.txt_atMaxLength->setCurrentText("discard");
-    ui.txt_directionality->setCurrentText("two_sided");
+    ui.txt_dataSupportExponent->setValue(trekker->getDataSupportExponent());
+    ui.txt_writeInterval->setValue(trekker->getWriteInterval());
+    ui.txt_atMaxLength->setCurrentText(QString::fromStdString(trekker->getAtMaxLength()));
+    ui.txt_directionality->setCurrentText(QString::fromStdString(trekker->getDirectionality()));
 
-    //Advanced
-    ui.txt_maxEstInterval->setValue(1);
-    ui.txt_initMaxEstTrials->setValue(50);
-    ui.txt_propMaxEstTrials->setValue(20);
-    ui.txt_maxSamplingPerStep->setValue(100);
-    ui.check_useBestAtInit->setChecked(false);
+    // Advanced
+    ui.txt_maxEstInterval->setValue(trekker->getMaxEstInterval());
+    ui.txt_initMaxEstTrials->setValue(trekker->getInitMaxEstTrials());
+    ui.txt_propMaxEstTrials->setValue(trekker->getPropMaxEstTrials());
+    ui.txt_maxSamplingPerStep->setValue(trekker->getMaxSamplingPerStep());
+    ui.check_useBestAtInit->setChecked(trekker->getUseBestAtInit());
 
-    ui.txt_probeLength->setValue(0.15625);
-    ui.txt_probeRadius->setValue(0);
-    ui.txt_probeCount->setValue(1);
-    ui.txt_probeQuality->setValue(3);
-    ui.txt_ignoreWeakLinks->setValue(0);
+    ui.txt_probeLength->setValue(trekker->getProbeLength());
+    ui.txt_probeRadius->setValue(trekker->getProbeRadius());
+    ui.txt_probeCount->setValue(trekker->getProbeCount());
+    ui.txt_probeQuality->setValue(trekker->getProbeQuality());
+    ui.txt_ignoreWeakLinks->setValue(trekker->getIgnoreWeakLinks());
 
+
+
+    // Enable widget
     ui.tabWidget->setEnabled(true);
-    ui.step3_label->setEnabled(true);
+    ui.scrollArea_1->setEnabled(true);
+    ui.scrollArea_2->setEnabled(true);
+    ui.scrollArea_3->setEnabled(true);
+    ui.txt_seed_radius->setEnabled(true);
+    ui.txt_seed_radius_label->setEnabled(true);
+    ui.interact_label->setEnabled(true);
+    ui.push_centerView->setEnabled(true);
+    ui.push_copyToClipboard->setEnabled(true);
+
+    ui.txt_numberOfThreads->setDisabled(true);
+    ui.txt_numberOfThreads_label->setDisabled(true);
+
+    ui.txt_minFODamp->setDisabled(true);
+    ui.txt_minFODamp_label->setDisabled(true);
+
 
 }

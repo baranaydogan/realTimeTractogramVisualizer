@@ -45,12 +45,6 @@ struct TrackerWithActor {
     int*                        cycle;
 };
 
-
-vtkSmartPointer<vtkActor> getTrkActor(std::vector<Coordinate> trk);
-void getStreamlineForROC(TrackerWithActor *trackerWithActor);
-void getTrkActorsInParallel(Coordinate* seed,int nthreads,vtkSmartPointer<vtkActor>* actors, TrackingThread* tracker,int* cycle);
-
-
 // For real time fiber tracking
 class vtkTimerCallback : public vtkCommand {
 
@@ -62,27 +56,28 @@ public:
 		return cb;
 	}
 
-	Brain* 									brain;
-	int										peelNo;
+	Brain* 										brain;
+	int											peelNo;
 
-	vtkSmartPointer<vtkPolyData> 			brainPolyData;
-	vtkSmartPointer<vtkActor> 				brainActor;
-    vtkSmartPointer<vtkActor> 				seedSphere;
+	vtkSmartPointer<vtkPolyData> 				brainPolyData;
+	vtkSmartPointer<vtkActor> 					brainActor;
+    vtkSmartPointer<vtkActor> 					seedSphere;
     
     
-	vtkSmartPointer<vtkCellPicker> 			picker;
-	std::vector<vtkSmartPointer<vtkActor>> 	trackActors;
+	vtkSmartPointer<vtkCellPicker> 				picker;
+	std::vector<vtkSmartPointer<vtkActor>> 		trackActors;
 
 	vtkSmartPointer<vtkRenderWindowInteractor>  interactor;
 
-	int 						currentlyShown;
-	int 						maxAllowedToShow;
-    bool                        visualizeUncertainty;
+	int  currentlyShown;
+	int  maxAllowedToShow;
+	int  batchSize;
+    bool visualizeUncertainty;
 
 	bool initializationFlag;
 
-    int cycleCounter;
-	int nthreads;
+    int  cycleCounter;
+	int  timerId;
     
     Trekker*                    trekker;
     
@@ -90,6 +85,10 @@ public:
 	TrackingThread* 			tracker;
 
 	TrkColor					trkColor;
+
+	float seedRadius   = 1;
+	float tubeRadius   = 0.5;
+	float addedOpacity = 0;
 
 
 	void Initialize(
@@ -105,10 +104,25 @@ public:
 	virtual void Execute(vtkObject*, unsigned long event, void *vtkNotUsed(calldata));
 
 	void updatePeel();
+
+	void setMaxShown(int _maxAllowedToShow) {maxAllowedToShow = _maxAllowedToShow;}
+
+	void setBatchSize(int _batchSize) {
+		Destroy();
+		batchSize 	= _batchSize;
+		tmpactors 	= new vtkSmartPointer<vtkActor>[batchSize];
+		tracker 	= new TrackingThread[batchSize];
+	}
+
+	void setSeedRadius(float _seedRadius) {seedRadius=_seedRadius;}
+	void setTubeRadius(float _tubeRadius) {tubeRadius=_tubeRadius;}
+	void setAddedOpacity(float _addedOpacity) {addedOpacity=_addedOpacity;}
     
 
 private:
-	int TimerCount;
+	int 	TimerCount;
+	void* 	rttvis;
+	bool    paused;
 
 };
 

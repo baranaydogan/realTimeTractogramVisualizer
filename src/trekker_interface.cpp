@@ -1,6 +1,11 @@
 #include "trekker_interface.h"
 #include "aux.h"
 #include "rttvis_gui.h"
+#include <string>
+#include <utility>
+#include <tuple>
+#include <sstream>
+#include <iomanip>
 
 namespace MULTITHREADER {
 std::condition_variable  exit_cv;
@@ -8,7 +13,7 @@ std::mutex               exit_mx;
 std::mutex               tracker_lock;
 }
 
-vtkSmartPointer<vtkActor> getTrkActor(std::vector<Coordinate> trk, TrkColor* trkColor, int* cycle) {
+vtkSmartPointer<vtkActor> getTrkActor(std::vector<Coordinate> trk, TrkColor* trkColor, int* cycle, float tradius, float addAlpha) {
 
 	// Set actor
 	auto actor = vtkSmartPointer<vtkActor>::New();
@@ -57,14 +62,14 @@ vtkSmartPointer<vtkActor> getTrkActor(std::vector<Coordinate> trk, TrkColor* trk
 			}
 			segmentColors->InsertNextTypedTuple(segmentColor);
 			linesPolyData->GetPointData()->SetScalars(segmentColors);
-            actor->GetProperty()->SetOpacity(0.008264463*double(*cycle)*double(*cycle));
+            actor->GetProperty()->SetOpacity(0.008264463*double(*cycle)*double(*cycle)+addAlpha);
 
 		}
 
 
 		// Create tube
 		auto tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
-		tubeFilter->SetRadius(0.5);
+		tubeFilter->SetRadius(tradius);
 		tubeFilter->SetNumberOfSides(6);
 		tubeFilter->SetInputData(linesPolyData);
 		tubeFilter->Update();
@@ -79,7 +84,7 @@ vtkSmartPointer<vtkActor> getTrkActor(std::vector<Coordinate> trk, TrkColor* trk
 		vtkNew<vtkNamedColors> colors;
 		if (*trkColor == WHITE) {
 			actor->GetProperty()->SetColor(colors->GetColor4d("White").GetData());
-            actor->GetProperty()->SetOpacity(0.008264463*double(*cycle)*double(*cycle));
+            actor->GetProperty()->SetOpacity(0.008264463*double(*cycle)*double(*cycle)+addAlpha);
         }
         
 		if (*trkColor == UNCERTAINTY) {            
@@ -113,31 +118,35 @@ vtkSmartPointer<vtkActor> getTrkActor(std::vector<Coordinate> trk, TrkColor* trk
 
 }
 
-void getStreamlineForROC(TrackerWithActor *trackerWithActor) {
+void getStreamlineForROC(std::tuple<TrackerWithActor*, float, float> params) {
+
+	TrackerWithActor *trackerWithActor  = std::get<0>(params);
+	float tradius 						= std::get<1>(params);
+	float addAlpha 						= std::get<2>(params);
+
     trackerWithActor->tracker->track(trackerWithActor->seed);
 	if (trackerWithActor->tracker->streamline->status==STREAMLINE_GOOD)
-    	*trackerWithActor->actor = getTrkActor(trackerWithActor->tracker->streamline->coordinates,trackerWithActor->trkColor,trackerWithActor->cycle);
+    	*trackerWithActor->actor = getTrkActor(trackerWithActor->tracker->streamline->coordinates,trackerWithActor->trkColor,trackerWithActor->cycle, tradius, addAlpha);
 	else
 		*trackerWithActor->actor = NULL;
 
 }
 
 
-void getTrkActorsInParallel(Coordinate* seed,int nthreads, vtkSmartPointer<vtkActor>* actors, TrkColor* trkColor, TrackingThread* tracker,int* cycle) {
+void getTrkActorsInParallel(Coordinate* seed,int batchSize, vtkSmartPointer<vtkActor>* actors, TrkColor* trkColor, TrackingThread* tracker,int* cycle,float sradius,float tradius,float addAlpha) {
     
 	int seedNo;
     
     RandomDoer randomThings;
-    float      radius = 1;
     
-    std::thread trekkers[nthreads];
+    std::thread trekkers[batchSize];
     
-	for(seedNo=0; seedNo<nthreads; seedNo++){
+	for(seedNo=0; seedNo<batchSize; seedNo++){
         
         Coordinate* randomlyMovedSeed       = new Coordinate();
-        randomlyMovedSeed->x                = seed->x + radius*randomThings.uniform_m05_p05();
-        randomlyMovedSeed->y                = seed->y + radius*randomThings.uniform_m05_p05();
-        randomlyMovedSeed->z                = seed->z + radius*randomThings.uniform_m05_p05();
+        randomlyMovedSeed->x                = seed->x + sradius*randomThings.uniform_m05_p05();
+        randomlyMovedSeed->y                = seed->y + sradius*randomThings.uniform_m05_p05();
+        randomlyMovedSeed->z                = seed->z + sradius*randomThings.uniform_m05_p05();
 
         tracker[seedNo].updateSeedNoAndTrialCount(seedNo,0);
         
@@ -148,12 +157,14 @@ void getTrkActorsInParallel(Coordinate* seed,int nthreads, vtkSmartPointer<vtkAc
 		trackerWithActor->trkColor 			= trkColor;
         trackerWithActor->cycle 		    = cycle;
 
-        trekkers[seedNo] =  std::thread(getStreamlineForROC, trackerWithActor);
+		std::tuple<TrackerWithActor*, float, float> params(trackerWithActor,tradius,addAlpha);
+
+        trekkers[seedNo] =  std::thread(getStreamlineForROC,params);
 
 		trackerWithActor = NULL;
 	}
 	
-	for(seedNo=0; seedNo<nthreads; seedNo++){
+	for(seedNo=0; seedNo<batchSize; seedNo++){
         trekkers[seedNo].join();
     }
 
@@ -165,44 +176,61 @@ void vtkTimerCallback::Initialize(
         Trekker* _trekker,
 		void*  	 _rttvis) {
 
-
-
-	std::cout << "Initializing viewer..." << std::flush;
-
 	picker 				= vtkSmartPointer<vtkCellPicker>::New();
 	picker->InitializePickList();
-	interactor 			= static_cast<RTTVIS*>(_rttvis)->getWindowInteractor();
+	rttvis              = _rttvis;
+	RTTVIS* rtt         = static_cast<RTTVIS*>(rttvis);
+	interactor 			= rtt->getWindowInteractor();
+
+	// Setup seed addSphere
+    seedSphere          = vtkSmartPointer<vtkActor>::New();
 
 	// Setup brain
 	brain 				= _brain;
-
-
-	peelNo 				= 0;
+	peelNo 				= 12;
 	brainPolyData 		= brain->peel[peelNo];
 	brainActor 			= brain->getPeelActor(peelNo);
 	picker->AddPickList(brainActor);
 	picker->SetPickFromList(1);
 
+    interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(seedSphere);
 	interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(brainActor);
 	interactor->GetRenderWindow()->Render();
-    
-    // Setup seed addSphere
-    seedSphere          = vtkSmartPointer<vtkActor>::New();
     
 	// Setup trekker
     trekker             = _trekker;
 	currentlyShown 		= 0;
     cycleCounter        = 0;
-	maxAllowedToShow 	= 4000;
+	maxAllowedToShow 	= 1000;
 
-	nthreads 	= 100;
-	tmpactors 	= new vtkSmartPointer<vtkActor>[nthreads];
-	tracker 	= new TrackingThread[nthreads];
+	batchSize 	= 100;
+	tmpactors 	= new vtkSmartPointer<vtkActor>[batchSize];
+	tracker 	= new TrackingThread[batchSize];
     
 	trkColor 	             = SEGMENTDIRECTION;
     visualizeUncertainty     = true;
 
-	std::cout << "Done" << std::endl << std::flush;
+	interactor->AddObserver(vtkCommand::TimerEvent, this);
+	interactor->AddObserver(vtkCommand::LeftButtonPressEvent, this);
+	interactor->AddObserver(vtkCommand::LeftButtonReleaseEvent, this);
+	// interactor->AddObserver(vtkCommand::EndInteractionEvent, this);
+	interactor->AddObserver(vtkCommand::MouseMoveEvent, this);
+	interactor->RemoveObservers(vtkCommand::MouseWheelBackwardEvent);
+	interactor->AddObserver(vtkCommand::MouseWheelBackwardEvent, this);
+	interactor->RemoveObservers(vtkCommand::MouseWheelForwardEvent);
+	interactor->AddObserver(vtkCommand::MouseWheelForwardEvent, this);
+	interactor->RemoveObservers(vtkCommand::CharEvent);
+	interactor->AddObserver(vtkCommand::KeyPressEvent, this);
+
+	timerId = interactor->CreateRepeatingTimer(10);
+	paused  = false;
+
+	interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->ResetCamera();
+	interactor->InvokeEvent(vtkCommand::LeftButtonPressEvent);
+	interactor->InvokeEvent(vtkCommand::LeftButtonReleaseEvent);
+
+	// Update info
+    rtt->ui.txt_info->setText("Press 'p' to pause");
 
 	return;
 
@@ -239,74 +267,53 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 
         double* picked 		= picker->GetPickPosition();
         vtkIdType cellId 	= picker->GetCellId();
-
     
         if (cellId!=-1) {
-        
-        // if ((cellId!=-1) && (currentlyShown!=maxAllowedToShow)) {
 
             if (currentlyShown>=maxAllowedToShow) {
-                for (int n=0; n<nthreads; n++) {
+                for (int n=0; n<batchSize; n++) {
                     if (trackActors[0])
                         interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor(trackActors[0]);
                     trackActors.erase(trackActors.begin());
                 }
-                currentlyShown -= nthreads;
+                currentlyShown -= batchSize;
             }
 
+			// Get seed
             Coordinate *seed = new Coordinate(picked[0],picked[1],picked[2]);
-            
-            addSphere(picked,seedSphere);
-    
-            
-            
-            // Update tracking parameters
-            
-            cycleCounter++;
-            
-            // Test fixed
-            // trekker->minFODamp(0.05);
-            // trekker->minFODamp(0.1);
-            // trekker->probeLength(0.1);
-            
-            // Test varying
-            trekker->minFODamp(0.0090909091*double(cycleCounter));
-			// std::cout << "minFODamp: " << 0.0090909091*double(cycleCounter) << std::endl << std::flush;
-            // trekker->minFODamp(0.0090909091*double(cycleCounter)/2.0);
-            // trekker->probeLength(0.0090909091*double(cycleCounter));
-            // trekker->stepSize(0.11 - 0.0090909091*double(cycleCounter));
-            
 
-            int cycle;
-            if (visualizeUncertainty)
-                cycle = cycleCounter;
-            else
-                cycle = 11;
+			// Print coordinates
+			RTTVIS* rtt	= static_cast<RTTVIS*>(rttvis);
+			std::stringstream ss;
+			ss << std::setprecision(4);
+			ss << picked[0] << " " << picked[1] << " " << picked[2];
+			rtt->ui.txt_coordinates->setText(QString::fromStdString(ss.str()));
+
+			// Show seed actor
+			addSphere(picked,seedSphere,seedRadius);
+            interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(seedSphere);
             
-            getTrkActorsInParallel(seed,nthreads,tmpactors,&trkColor,tracker,&cycle);
+            // Update tracking parameters with varying minFODamp
+            cycleCounter++;
+            trekker->minFODamp(0.0090909091*double(cycleCounter));
+            
+            int cycle = (visualizeUncertainty) ? cycleCounter : 11;
+            
+            getTrkActorsInParallel(seed,batchSize,tmpactors,&trkColor,tracker,&cycle,seedRadius,tubeRadius,addedOpacity);
             
             if (cycleCounter==11) cycleCounter=0;
             
-            
-            for (int n=0; n<nthreads; n++) {
+            for (int n=0; n<batchSize; n++) {
                 trackActors.push_back(tmpactors[n]);
                 interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(tmpactors[n]);
             }
-            currentlyShown += nthreads;
-            
-            /*
-            if (currentlyShown==maxAllowedToShow)
-                std::cout<<"Reached max"<<std::endl<<std::flush;
-            */
-            
+            currentlyShown += batchSize;
 
-            
-            interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(seedSphere);
+			interactor->GetRenderWindow()->Render();
             
             delete seed;
 
         }
-        interactor->GetRenderWindow()->Render();
         
 	
 	}
@@ -314,17 +321,18 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 
 
 	case vtkCommand::MouseMoveEvent:
-	case vtkCommand::EndInteractionEvent:
 	{
-        for(vtkIdType i=0; i<currentlyShown; i++)
-            interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor(trackActors[i]);
-        
-        interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor(seedSphere);
-        
-        if (trackActors.size()) trackActors.clear();
-        
-        cycleCounter=0;
-        currentlyShown=0;
+		if (!paused) {
+			for(vtkIdType i=0; i<currentlyShown; i++)
+				interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor(trackActors[i]);
+			
+			interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor(seedSphere);
+			
+			if (trackActors.size()) trackActors.clear();
+			
+			cycleCounter=0;
+			currentlyShown=0;
+		}
         
 	}
 	break;
@@ -335,7 +343,6 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 
 		if (peelNo<brain->numberOfPeels) {
 			peelNo++;
-			// std::cout << "Slicing down to peel: " << peelNo << std::endl << std::flush;
 			updatePeel();
 		}
 
@@ -347,7 +354,6 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 
 		if (peelNo>0) {
 			peelNo--;
-			// std::cout << "Slicing up to peel: " << peelNo << std::endl << std::flush;
 			updatePeel();
 		}
 
@@ -360,35 +366,47 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 
 		std::string key = interactor->GetKeySym();
 
+		if (key=="r") {
+			interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->ResetCamera();
+			interactor->InvokeEvent(vtkCommand::LeftButtonPressEvent);
+			interactor->InvokeEvent(vtkCommand::LeftButtonReleaseEvent);
+		}
+
 		if (key=="c") {
+
 			if (trkColor==WHITE)
 				trkColor=UNCERTAINTY;
 			else if (trkColor==UNCERTAINTY)
 				trkColor=SEGMENTDIRECTION;
 			else if (trkColor==SEGMENTDIRECTION)
 				trkColor=WHITE;
+
+			interactor->InvokeEvent(vtkCommand::MouseMoveEvent);
 		}
 		
-		if (key=="u")
+		if (key=="u") {
+
 			visualizeUncertainty = !visualizeUncertainty;
-        
-        if (key=="d") {
-			visualizeUncertainty = false;
-            trekker->minFODamp(0.1);
-            trekker->probeLength(0.1);
-            trekker->stepSize(0.01);
-            trekker->writeInterval(200);
+
+			interactor->InvokeEvent(vtkCommand::MouseMoveEvent);
+
+		}
+
+		if (key=="p") {
+
+			RTTVIS* rtt = static_cast<RTTVIS*>(rttvis);
+
+			if (paused) {
+				timerId = interactor->CreateRepeatingTimer(10);
+				rtt->ui.txt_info->setText("Press 'p' to pause");
+			}
+			else {
+				interactor->DestroyTimer(timerId);
+				rtt->ui.txt_info->setText("Press 'p' to resume");
+			}
+
+			paused = !paused;
         }
-		
-        if (key=="p") {
-			visualizeUncertainty = false;
-            trekker->minFODamp(0.01);
-            trekker->probeLength(0.01);
-            trekker->stepSize(0.1);
-            trekker->writeInterval(20);
-        }
-		
-		interactor->InvokeEvent(vtkCommand::EndInteractionEvent);
 
 	}
 	break;

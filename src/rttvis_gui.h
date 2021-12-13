@@ -9,6 +9,8 @@
 #include "trekker_interface.h"
 #include "brainmesh_handler.h"
 
+#include <QClipboard>
+
 class RTTVIS : public QMainWindow
 {
     Q_OBJECT
@@ -30,12 +32,16 @@ public:
         return ui.qvtkOpenGLStereoWidget->interactor();
     };
 
+    QClipboard *clipboard;
+
     // Input image file names
     std::string fname_T1;
     std::string fname_Mask;
     std::string fname_FOD;
     std::string fname_ACT;
 
+    // Interactor
+    vtkSmartPointer<vtkTimerCallback> looper;
     void startRealTimeTracker();
 
     Ui::RTTVIS_GUI ui;

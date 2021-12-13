@@ -1,12 +1,12 @@
 #include "aux.h"
 
-void addSphere(double *picked, vtkSmartPointer<vtkActor> actor) {
+void addSphere(double *picked, vtkSmartPointer<vtkActor> actor, float sradius) {
 
 	vtkNew<vtkNamedColors> colors;
 
 	auto sphereSource = vtkSmartPointer<vtkSphereSource>::New();
 	sphereSource->SetCenter(picked[0], picked[1], picked[2]);
-	sphereSource->SetRadius(2.0);
+	sphereSource->SetRadius(sradius+1.0);
 
 	auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 	mapper->SetInputConnection(sphereSource->GetOutputPort());
