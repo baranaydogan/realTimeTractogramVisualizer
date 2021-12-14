@@ -4,23 +4,39 @@
 #include <QString>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
+#include <qaction.h>
 #include <qcheckbox.h>
 #include <qcombobox.h>
 #include <QTimer>
+#include <qdialog.h>
+
 
 RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
 
 	ui.setupUi(this);
-
+    
     clipboard = QApplication::clipboard();
 
+
+    // Menu
+    connect(
+        ui.actionAbout, 
+        &QAction::triggered,
+        [&](){
+            dialogAbout.exec();
+        }
+    );
+
+    // Initialization
     connect(
         ui.push_T1, 
         &QPushButton::clicked,
         [&](){
             QString tmp = QFileDialog::getOpenFileName(this,tr("Load T1"), "", tr("Nifti image (*.nii *.nii.gz)"));
-            ui.fname_T1_line->setText(tmp);
-            fname_T1 = tmp.toStdString();
+            if (tmp!="") {
+                ui.fname_T1_line->setText(tmp);
+                fname_T1 = tmp.toStdString();
+            }
             if ((ui.fname_T1_line->text()!="N/A") && (ui.fname_Mask_line->text()!="N/A") && (ui.fname_FOD_line->text()!="N/A") && (ui.fname_ACT_line->text()!="N/A")) {
                 ui.StartTracker->setEnabled(true);
             }
@@ -33,8 +49,10 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
         &QPushButton::clicked,
         [&](){
             QString tmp = QFileDialog::getOpenFileName(this,tr("Load Mask"), "", tr("Nifti image (*.nii *.nii.gz)"));
-            ui.fname_Mask_line->setText(tmp);
-            fname_Mask = tmp.toStdString();
+            if (tmp!="") {
+                ui.fname_Mask_line->setText(tmp);
+                fname_Mask = tmp.toStdString();
+            }
             if ((ui.fname_T1_line->text()!="N/A") && (ui.fname_Mask_line->text()!="N/A") && (ui.fname_FOD_line->text()!="N/A") && (ui.fname_ACT_line->text()!="N/A")) {
                 ui.StartTracker->setEnabled(true);
             }
@@ -46,8 +64,10 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
         &QPushButton::clicked,
         [&](){
             QString tmp = QFileDialog::getOpenFileName(this,tr("Load FOD"), "", tr("Nifti image (*.nii *.nii.gz)"));
-            ui.fname_FOD_line->setText(tmp);
-            fname_FOD = tmp.toStdString();
+            if (tmp!="") {
+                ui.fname_FOD_line->setText(tmp);
+                fname_FOD = tmp.toStdString();
+            }
             if ((ui.fname_T1_line->text()!="N/A") && (ui.fname_Mask_line->text()!="N/A") && (ui.fname_FOD_line->text()!="N/A") && (ui.fname_ACT_line->text()!="N/A")) {
                 ui.StartTracker->setEnabled(true);
             }
@@ -59,8 +79,10 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
         &QPushButton::clicked,
         [&](){
             QString tmp = QFileDialog::getOpenFileName(this,tr("Load ACT"), "", tr("Nifti image (*.nii *.nii.gz)"));
-            ui.fname_ACT_line->setText(tmp);
-            fname_ACT = tmp.toStdString();
+            if (tmp!="") {
+                ui.fname_ACT_line->setText(tmp);
+                fname_ACT = tmp.toStdString();
+            }
             if ((ui.fname_T1_line->text()!="N/A") && (ui.fname_Mask_line->text()!="N/A") && (ui.fname_FOD_line->text()!="N/A") && (ui.fname_ACT_line->text()!="N/A")) {
                 ui.StartTracker->setEnabled(true);
             }
@@ -371,7 +393,8 @@ void RTTVIS::startRealTimeTracker()
 	// Prepare trekker
     // std::cout << "Preparing trekker... " << std::endl << std::flush ;
     ui.progressText->setText("Preparing Trekker (this might take some time)");
-    ui.progressText->update();
+    ui.progressBar->setValue(40);
+
     std::string dir = (ui.FOD_orderOfDirections->currentText()=="Order Of Directions") ? "XYZ" : ui.FOD_orderOfDirections->currentText().toStdString();
     trekker = new Trekker(fname_FOD, dir, ui.FOD_discretization->isChecked());
     ui.progressBar->setValue(100);

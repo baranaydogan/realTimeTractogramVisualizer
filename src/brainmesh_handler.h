@@ -71,9 +71,9 @@ private:
 	void* rttvis;
 };
 
-vtkSmartPointer<vtkPolyData> readBrain(char *brain_fname);
-vtkSmartPointer<vtkActor> drawBrain(vtkSmartPointer<vtkPolyData> brain);
 
-vtkSmartPointer<vtkPolyData> readBrainNIFTI(char *T1_fname, char *mask_fname);
+// vtkSmartPointer<vtkPolyData> readBrain(char *brain_fname);
+// vtkSmartPointer<vtkActor> drawBrain(vtkSmartPointer<vtkPolyData> brain);
+// vtkSmartPointer<vtkPolyData> readBrainNIFTI(char *T1_fname, char *mask_fname);
 
 #endif

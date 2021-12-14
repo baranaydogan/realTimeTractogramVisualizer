@@ -141,11 +141,6 @@ void Brain::peelDown() {
 		newPeel->DeepCopy(currentPeel);
 		peel.push_back(newPeel);
 
-		//		getCurrentPeelActor();
-		//		auto newPeelActor = vtkSmartPointer<vtkActor>::New();
-		//		newPeelActor = currentPeelActor;
-		//		peelActors.push_back(newPeelActor);
-
 		currentPeelNo++;
 		rtt->ui.progressBar->setValue(currentPeelNo+3);
 	}
@@ -154,7 +149,6 @@ void Brain::peelDown() {
 
 vtkSmartPointer<vtkActor> Brain::getPeelActor(int p) {
 	vtkNew<vtkNamedColors> colors;
-
 
 	// Create the color map
 	vtkSmartPointer<vtkLookupTable> colorLookupTable = vtkSmartPointer<vtkLookupTable>::New();
@@ -348,6 +342,7 @@ vtkSmartPointer<vtkPolyData> brain_downsample(vtkSmartPointer<vtkPolyData> inp) 
 
 }
 
+/*
 vtkSmartPointer<vtkPolyData> readBrain(char *brain_fname) {
 
 	// std::cout << "Reading brain mesh... " << std::flush;
@@ -403,3 +398,4 @@ vtkSmartPointer<vtkActor> drawBrain(vtkSmartPointer<vtkPolyData> brain) {
 	return actor;
 
 }
+*/

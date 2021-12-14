@@ -11,7 +11,7 @@ cmakeExe=cmake
 c_compiler=gcc
 cxx_compiler=g++
 
-# Path to Trekker
+# Path to Trekker (below is an example)
 trekkerSrc=/home/baran/Work/code/trekker/src
 trekkerLib=/home/baran/Work/code/trekker/build/Linux/install/lib
 

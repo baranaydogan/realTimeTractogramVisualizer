@@ -633,7 +633,7 @@
                     <x>0</x>
                     <y>0</y>
                     <width>347</width>
-                    <height>464</height>
+                    <height>492</height>
                    </rect>
                   </property>
                   <layout class="QGridLayout" name="gridLayout_15">
@@ -817,7 +817,7 @@
                     <x>0</x>
                     <y>0</y>
                     <width>347</width>
-                    <height>464</height>
+                    <height>492</height>
                    </rect>
                   </property>
                   <layout class="QGridLayout" name="gridLayout_7">
@@ -1124,7 +1124,7 @@
                     <x>0</x>
                     <y>0</y>
                     <width>347</width>
-                    <height>464</height>
+                    <height>492</height>
                    </rect>
                   </property>
                   <property name="maximumSize">
@@ -1645,7 +1645,6 @@
     <property name="title">
      <string>Help</string>
     </property>
-    <addaction name="actionHow_to_use_the_interface"/>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuHelp"/>

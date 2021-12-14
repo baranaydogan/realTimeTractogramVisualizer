@@ -51,16 +51,14 @@ SET(rttvis_gui_SRCS
 	aux.cpp
 	)
 
-SET(rttvis_gui_MOC_HDRS 
-	rttvis_gui.h	
-	)
+QT6_ADD_RESOURCES(rttvis_gui_SRCS resources.qrc)
 
-SET(rttvis_gui_UI 
-	rttvis_gui.ui
-	)
+SET(rttvis_gui_MOC_HDRS rttvis_gui.h)
+SET(rttvis_gui_UI rttvis_gui.ui)
+SET(about_UI gui_about.ui)
 
 QT6_WRAP_CPP(rttvis_gui_MOC_SRCS ${rttvis_gui_MOC_HDRS})
-QT6_WRAP_UI(rttvis_gui_UI_HDRS ${rttvis_gui_UI})
+QT6_WRAP_UI(rttvis_gui_UI_HDRS about_UI_HDRS ${rttvis_gui_UI})
 
 ADD_EXECUTABLE(rttvis
 	${rttvis_gui_SRCS}
@@ -78,7 +76,7 @@ target_link_libraries(rttvis
 	${ACVD_LIBRARIES}
 	)
 
-INSTALL(TARGETS rttvis DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/../bin/)
+INSTALL(TARGETS rttvis DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../bin)
 
 
 
