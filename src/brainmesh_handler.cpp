@@ -142,10 +142,11 @@ void Brain::peelDown() {
 		peel.push_back(newPeel);
 
 		currentPeelNo++;
-		rtt->ui.progressBar->setValue(currentPeelNo+3);
+		rtt->ui.progressBar->setValue(currentPeelNo+5);
 	}
 
 }
+
 
 vtkSmartPointer<vtkActor> Brain::getPeelActor(int p) {
 	vtkNew<vtkNamedColors> colors;
@@ -155,20 +156,14 @@ vtkSmartPointer<vtkActor> Brain::getPeelActor(int p) {
 	colorLookupTable->SetNumberOfColors(512);
 	colorLookupTable->SetSaturationRange(0,0);
 	colorLookupTable->SetHueRange(0,0);
-	colorLookupTable->SetValueRange(0,1);
-	// colorLookupTable->SetTableRange(0,1000);
-	//colorLookupTable->SetTableRange(0,250);
-	colorLookupTable->SetTableRange(0,200);
-//	colorLookupTable->SetTableRange(0,150);
+	colorLookupTable->SetValueRange(0,2.5);
+	colorLookupTable->SetTableRange(refImage->GetScalarRange());
 	colorLookupTable->Build();
 
 	// Set mapper
 	auto mapper = vtkSmartPointer<vtkOpenGLPolyDataMapper>::New();
 	mapper->SetInputData(peel[p]);
-	//mapper->SetScalarRange(0, 1000);
-//	mapper->SetScalarRange(0, 250);
-	mapper->SetScalarRange(0, 200);
-//	mapper->SetScalarRange(0, 150);
+	mapper->SetScalarRange(refImage->GetScalarRange());
 	mapper->SetLookupTable(colorLookupTable);
 	mapper->InterpolateScalarsBeforeMappingOn();
 
@@ -177,6 +172,7 @@ vtkSmartPointer<vtkActor> Brain::getPeelActor(int p) {
 
 	return currentPeelActor;
 }
+
 
 vtkSmartPointer<vtkActor> Brain::getCurrentPeelActor() {
 
@@ -188,20 +184,14 @@ vtkSmartPointer<vtkActor> Brain::getCurrentPeelActor() {
 	colorLookupTable->SetNumberOfColors(512);
 	colorLookupTable->SetSaturationRange(0,0);
 	colorLookupTable->SetHueRange(0,0);
-	colorLookupTable->SetValueRange(0,1);
-	// colorLookupTable->SetTableRange(0,1000);
-	// colorLookupTable->SetTableRange(0,250);
-	colorLookupTable->SetTableRange(0,200);
-//	colorLookupTable->SetTableRange(0,150);
+	colorLookupTable->SetValueRange(0,2.5);
+	colorLookupTable->SetTableRange(refImage->GetScalarRange());
 	colorLookupTable->Build();
 
 	// Set mapper
 	auto mapper = vtkSmartPointer<vtkOpenGLPolyDataMapper>::New();
 	mapper->SetInputData(currentPeel);
-	// mapper->SetScalarRange(0, 1000);
-//	mapper->SetScalarRange(0, 250);
-	mapper->SetScalarRange(0, 200);
-//	mapper->SetScalarRange(0, 150);
+	mapper->SetScalarRange(refImage->GetScalarRange());
 	mapper->SetLookupTable(colorLookupTable);
 	mapper->InterpolateScalarsBeforeMappingOn();
 
@@ -238,9 +228,33 @@ Brain::Brain(std::string T1_fname, std::string mask_fname, void* _rttvis) {
 	mask_reader->Update();
 	rtt->ui.progressBar->setValue(2);
 
+	// Zero-padding
+	rtt->ui.progressText->setText("Zero padding");
+	auto padFilter = vtkSmartPointer<vtkImageConstantPad>::New();
+	padFilter->SetInputConnection(mask_reader->GetOutputPort());
+	padFilter->SetConstant(0);
+	int extent[6];
+	refImage->GetExtent(extent);
+	padFilter->SetOutputWholeExtent(extent[0]-1,extent[1]+1,extent[2]-1,extent[3]+1,extent[4]-1,extent[5]+1);
+	padFilter->GetOutput();
+	rtt->ui.progressBar->setValue(3);
+
+	// Apply morphological closing
+	rtt->ui.progressText->setText("Filling holes");
+	auto openClose = vtkSmartPointer<vtkImageOpenClose3D>::New();
+	openClose->SetInputConnection(padFilter->GetOutputPort());
+	openClose->SetOpenValue(0);
+	openClose->SetCloseValue(1);
+	openClose->SetKernelSize(11, 11, 11);
+	openClose->ReleaseDataFlagOff();
+	openClose->GetOutput();
+	openClose->GetCloseValue();
+	rtt->ui.progressBar->setValue(4);	
+
+	// Prep mesh
 	rtt->ui.progressText->setText("Preparing surface mesh");
 	auto mc = vtkSmartPointer<vtkContourFilter>::New();
-	mc->SetInputConnection(mask_reader->GetOutputPort());
+	mc->SetInputConnection(openClose->GetOutputPort());
 	mc->SetValue(0, 1);
 	mc->Update();
 
@@ -302,7 +316,7 @@ Brain::Brain(std::string T1_fname, std::string mask_fname, void* _rttvis) {
 	peelActors.push_back(currentPeelActor);
 
 	numberOfPeels = 30;
-	rtt->ui.progressBar->setValue(3);
+	rtt->ui.progressBar->setValue(5);
 
 	// Start peeling
 	peelDown();

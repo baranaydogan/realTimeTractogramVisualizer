@@ -34,6 +34,8 @@
 #include <vtkImageReslice.h>
 #include <vtkImageBSplineInterpolator.h>
 #include <vtkProbeFilter.h>
+#include <vtkImageOpenClose3D.h>
+#include <vtkImageConstantPad.h>
 
 #include <vtkLinearSubdivisionFilter.h>
 #include <vtkSurfaceReconstructionFilter.h>

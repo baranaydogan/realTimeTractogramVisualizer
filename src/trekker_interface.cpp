@@ -341,8 +341,11 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 	case vtkCommand::MouseWheelForwardEvent:
 	{
 
+		RTTVIS* rtt = static_cast<RTTVIS*>(rttvis);
+
 		if (peelNo<brain->numberOfPeels) {
 			peelNo++;
+			rtt->ui.txt_peelNo->setValue(peelNo);
 			updatePeel();
 		}
 
@@ -352,8 +355,11 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 	case vtkCommand::MouseWheelBackwardEvent:
 	{
 
+		RTTVIS* rtt = static_cast<RTTVIS*>(rttvis);
+
 		if (peelNo>0) {
 			peelNo--;
+			rtt->ui.txt_peelNo->setValue(peelNo);
 			updatePeel();
 		}
 
