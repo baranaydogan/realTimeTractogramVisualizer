@@ -123,6 +123,7 @@ private:
 	int 	TimerCount;
 	void* 	rttvis;
 	bool    paused;
+	bool    fixed;
 
 };
 

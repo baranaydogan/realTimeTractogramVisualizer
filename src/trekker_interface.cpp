@@ -220,17 +220,19 @@ void vtkTimerCallback::Initialize(
 	interactor->RemoveObservers(vtkCommand::MouseWheelForwardEvent);
 	interactor->AddObserver(vtkCommand::MouseWheelForwardEvent, this);
 	interactor->RemoveObservers(vtkCommand::CharEvent);
+	interactor->RemoveObservers(vtkCommand::KeyPressEvent);
 	interactor->AddObserver(vtkCommand::KeyPressEvent, this);
 
 	timerId = interactor->CreateRepeatingTimer(10);
 	paused  = false;
+	fixed   = false;
 
 	interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->ResetCamera();
 	interactor->InvokeEvent(vtkCommand::LeftButtonPressEvent);
 	interactor->InvokeEvent(vtkCommand::LeftButtonReleaseEvent);
 
 	// Update info
-    rtt->ui.txt_info->setText("Press 'p' to pause");
+    rtt->ui.txt_info->setText("Press 'p' to pause\nPress 'f' to fix seed");
 
 	return;
 
@@ -258,12 +260,14 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 
 	case vtkCommand::TimerEvent:
 	{
-        
-        picker->Pick(
-                interactor->GetEventPosition()[0],
-                interactor->GetEventPosition()[1],
-                0,
-                interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
+
+		if (!fixed) {
+			picker->Pick(
+					interactor->GetEventPosition()[0],
+					interactor->GetEventPosition()[1],
+					0,
+					interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
+		}
 
         double* picked 		= picker->GetPickPosition();
         vtkIdType cellId 	= picker->GetCellId();
@@ -398,13 +402,29 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 
 		}
 
+		if (key=="f") {
+
+			RTTVIS* rtt = static_cast<RTTVIS*>(rttvis);
+			
+			if (!paused) {
+				fixed = !fixed;
+				if (!fixed)
+					rtt->ui.txt_info->setText("Press 'p' to pause\nPress 'f' to fix seed");
+				else
+					rtt->ui.txt_info->setText("Press 'p' to pause\nPress 'f' to move seed");
+			}
+		}
+
 		if (key=="p") {
 
 			RTTVIS* rtt = static_cast<RTTVIS*>(rttvis);
 
 			if (paused) {
 				timerId = interactor->CreateRepeatingTimer(10);
-				rtt->ui.txt_info->setText("Press 'p' to pause");
+				if (!fixed)
+					rtt->ui.txt_info->setText("Press 'p' to pause\nPress 'f' to fix seed");
+				else
+					rtt->ui.txt_info->setText("Press 'p' to pause\nPress 'f' to move seed");
 			}
 			else {
 				interactor->DestroyTimer(timerId);

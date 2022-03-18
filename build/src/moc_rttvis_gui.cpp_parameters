@@ -1,0 +1,10 @@
+-I/home/baran/Work/code/trekker/src/nifticlib-2.0.0/znzlib
+-I/home/baran/Work/code/trekker/src
+-I/opt/src/ACVD/Common
+-I/opt/src/ACVD/DiscreteRemeshing
+-I/opt/src/ACVD/VolumeProcessing
+-I/home/baran/Work/code/realTimeTractogramVisualizer/src
+-I/home/baran/Work/code/realTimeTractogramVisualizer/build/src
+-o
+/home/baran/Work/code/realTimeTractogramVisualizer/build/src/moc_rttvis_gui.cpp
+/home/baran/Work/code/realTimeTractogramVisualizer/src/rttvis_gui.h
