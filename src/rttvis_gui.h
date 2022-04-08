@@ -1,7 +1,18 @@
 #ifndef RTTVIS_GUI_H_
 #define RTTVIS_GUI_H_
 
-#include "ui_rttvis_gui.h"
+#ifdef HAVE_VTK7
+#include "ui_rttvis_gui_VTK7.h"
+#endif
+
+#ifdef HAVE_VTK8
+#include "ui_rttvis_gui_VTK8.h"
+#endif
+
+#ifdef HAVE_VTK9
+#include "ui_rttvis_gui_VTK9.h"
+#endif
+
 #include "ui_gui_about.h"
 
 #include <qdialog.h>
@@ -52,11 +63,24 @@ public:
     };
 
     void addWindow(vtkSmartPointer<vtkGenericOpenGLRenderWindow> window) {
-        ui.qvtkOpenGLStereoWidget->setRenderWindow(window);
+
+#ifdef HAVE_VTK9
+        ui.qvtkWidget->setRenderWindow(window);
+#else
+        ui.qvtkWidget->SetRenderWindow(window);
+#endif
+
     };
 
     vtkSmartPointer<vtkRenderWindowInteractor> getWindowInteractor() {
-        return ui.qvtkOpenGLStereoWidget->interactor();
+
+#ifdef HAVE_VTK9
+        return ui.qvtkWidget->interactor();
+#else
+        return ui.qvtkWidget->GetInteractor();
+#endif
+
+
     };
 
     QClipboard *clipboard;

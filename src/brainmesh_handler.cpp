@@ -1,6 +1,19 @@
 #include "brainmesh_handler.h"
 #include "rttvis_gui.h"
-#include "ui_rttvis_gui.h"
+
+#ifdef HAVE_VTK7
+#include "ui_rttvis_gui_VTK7.h"
+#endif
+
+#ifdef HAVE_VTK8
+#include "ui_rttvis_gui_VTK8.h"
+#endif
+
+#ifdef HAVE_VTK9
+#include "ui_rttvis_gui_VTK9.h"
+#endif
+
+
 
 vtkSmartPointer<vtkPolyData> cleanMesh(vtkSmartPointer<vtkPolyData> inp) {
 	auto cleaned = vtkSmartPointer<vtkCleanPolyData>::New();
@@ -356,60 +369,3 @@ vtkSmartPointer<vtkPolyData> brain_downsample(vtkSmartPointer<vtkPolyData> inp) 
 
 }
 
-/*
-vtkSmartPointer<vtkPolyData> readBrain(char *brain_fname) {
-
-	// std::cout << "Reading brain mesh... " << std::flush;
-
-	std::string fname = std::string(brain_fname);
-	auto reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
-//	auto reader = vtkSmartPointer<vtkPolyDataReader>::New();
-	reader->SetFileName(fname.c_str());
-	reader->Update();
-
-	auto surface = vtkSmartPointer<vtkPolyData>::New();
-	surface = reader->GetOutput();
-//	surface = brain_downsample(surface);
-
-
-	// Write the file
-//	auto writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-//	writer->SetFileName("100307_right_GM.vtp");
-//	writer->SetInputData(surface);
-//	writer->Write();
-
-	// std::cout<<"Done" << std::endl;
-
-	return surface;
-
-}
-
-
-vtkSmartPointer<vtkActor> drawBrain(vtkSmartPointer<vtkPolyData> brain) {
-
-	vtkNew<vtkNamedColors> colors;
-
-	// Set mapper
-	auto mapper = vtkSmartPointer<vtkOpenGLPolyDataMapper>::New();
-	mapper->SetInputData(brain);
-	mapper->ScalarVisibilityOff();
-
-	// Set actor
-	auto actor = vtkSmartPointer<vtkActor>::New();
-	actor->SetMapper(mapper);
-
-	actor->GetProperty()->SetColor(colors->GetColor4d("Pink").GetData());
-	actor->GetProperty()->SetOpacity(0.25);
-	actor->GetProperty()->SetShading(1);
-	actor->GetProperty()->SetSpecular(1);
-	actor->GetProperty()->SetSpecularPower(100);
-	actor->GetProperty()->SetAmbient(0);
-	actor->GetProperty()->SetDiffuse(1);
-	actor->GetProperty()->SetSpecularColor(colors->GetColor4d("White").GetData());
-	actor->GetProperty()->SetInterpolationToGouraud();
-	actor->GetProperty()->SetBackfaceCulling(1);
-
-	return actor;
-
-}
-*/

@@ -18,7 +18,6 @@
 #include <vtkProperty.h>
 
 #include <vtkNIFTIImageReader.h>
-#include <vtkDiscreteFlyingEdges3D.h>
 #include <vtkPolyDataConnectivityFilter.h>
 #include <vtkWindowedSincPolyDataFilter.h>
 #include <vtkSmoothPolyDataFilter.h>
@@ -72,10 +71,5 @@ private:
 	void  sliceDown();
 	void* rttvis;
 };
-
-
-// vtkSmartPointer<vtkPolyData> readBrain(char *brain_fname);
-// vtkSmartPointer<vtkActor> drawBrain(vtkSmartPointer<vtkPolyData> brain);
-// vtkSmartPointer<vtkPolyData> readBrainNIFTI(char *T1_fname, char *mask_fname);
 
 #endif
