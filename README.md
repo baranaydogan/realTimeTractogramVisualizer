@@ -2,17 +2,17 @@
 
 ## Dependencies
 1. CMake (min version 3.15)
-2. A modern compiler, e.g. gcc-6 or newer
+2. gcc-8 or newer
 3. libzip
-4. QT6
-5. VTK 9.1
+4. QT5 or newer
+5. VTK7 or newer (installed with QT support)
 6. ACVD [(https://github.com/valette/ACVD/tree/83f7c05a7b3ccf0445708cea918b4b11325fb229)](https://github.com/valette/ACVD/tree/83f7c05a7b3ccf0445708cea918b4b11325fb229)
 7. Trekker [(https://github.com/dmritrekker/trekker)](https://github.com/dmritrekker/trekker)
 
 Notes on dependency installation:
-- You will need to install QT6, VTK, ACVD and Trekker manually from source. Please follow the instructions below.
-- Please first install QT6 with *WebEngine, WebChannel, WebSockets, WebView, Positioning*.
-- Then VTK should be installed with QT6 support.
+- You will need to install QT, VTK, ACVD and Trekker manually from source. Please follow the instructions below.
+- Please first install QT with *WebEngine, WebChannel, WebSockets, WebView, Positioning*.
+- Then VTK should be installed with QT support.
 - Then install ACVD. ACVD recently went through an update and the latest update is not yet supported by real-time tractogram visualizer. Please use the above link when installing ACVD (commit #83f7c05).
 - Lastly, compile Trekker.
 
