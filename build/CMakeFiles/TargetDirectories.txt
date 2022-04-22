@@ -1,0 +1,14 @@
+/home/baran/Work/code/realTimeTractogramVisualizer/build/CMakeFiles/edit_cache.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/CMakeFiles/rebuild_cache.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/CMakeFiles/list_install_components.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/CMakeFiles/install.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/CMakeFiles/install/local.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/CMakeFiles/install/strip.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/src/CMakeFiles/rttvis.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/src/CMakeFiles/edit_cache.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/src/CMakeFiles/rebuild_cache.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/src/CMakeFiles/list_install_components.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/src/CMakeFiles/install.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/src/CMakeFiles/install/local.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/src/CMakeFiles/install/strip.dir
+/home/baran/Work/code/realTimeTractogramVisualizer/build/src/CMakeFiles/rttvis_autogen.dir

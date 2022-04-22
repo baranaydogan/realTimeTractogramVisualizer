@@ -299,7 +299,11 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
             
             // Update tracking parameters with varying minFODamp
             cycleCounter++;
-            trekker->minFODamp(0.0090909091*double(cycleCounter));
+
+			if (visualizeUncertainty)
+            	trekker->minFODamp(0.0090909091*double(cycleCounter));
+			else
+				trekker->minFODamp(rtt->ui.txt_minFODamp->value()) ;
             
             int cycle = (visualizeUncertainty) ? cycleCounter : 11;
             
@@ -326,7 +330,7 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 
 	case vtkCommand::MouseMoveEvent:
 	{
-		if (!paused) {
+		if (!paused && !fixed) {
 			for(vtkIdType i=0; i<currentlyShown; i++)
 				interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor(trackActors[i]);
 			

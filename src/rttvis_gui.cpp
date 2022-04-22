@@ -155,6 +155,33 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
         }
     );
     
+    connect(
+        ui.check_uncertainty,
+        QOverload<int>::of(&QCheckBox::stateChanged),
+        [&](int val){
+            if (val==0) {
+                looper->setUncertainty(false);
+
+                ui.txt_minFODamp->setEnabled(true);
+                ui.txt_minFODamp_label->setEnabled(true);
+
+                if (ui.txt_minFODamp->value()==0.001) {
+                    ui.txt_minFODamp->setValue(0.05);
+                    trekker->minFODamp(0.05);
+                }
+
+                // std::cout << "uncertainty: false" << std::endl;
+            } else {
+                looper->setUncertainty(true);
+
+                ui.txt_minFODamp->setDisabled(true);
+                ui.txt_minFODamp_label->setDisabled(true);
+                
+                // std::cout << "uncertainty: true" << std::endl;
+            }
+                
+        }
+    );
 
     // Tracking
 
@@ -199,6 +226,15 @@ RTTVIS::RTTVIS(QMainWindow *parent) : QMainWindow(parent) {
         [&](double val){
             trekker->minRadiusOfCurvature(val);
             // std::cout << "minRadiusOfCurvature: " << val << std::endl;
+        }
+    );
+
+    connect(
+        ui.txt_minFODamp,
+        QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        [&](double val){
+            trekker->minFODamp(val);
+            // std::cout << "minFODamp: " << val << std::endl;
         }
     );
 
@@ -452,6 +488,7 @@ void RTTVIS::startRealTimeTracker()
     ui.txt_batchCount->setValue(looper->batchSize);
     ui.txt_tubeRadius->setValue(looper->tubeRadius);
     ui.txt_addOpacity->setValue(looper->addedOpacity);
+    ui.check_uncertainty->setChecked(looper->visualizeUncertainty);
     
     // Tracking
     ui.txt_numberOfThreads->setValue(trekker->getNumberOfThreads());
@@ -498,6 +535,8 @@ void RTTVIS::startRealTimeTracker()
 
     ui.txt_minFODamp->setDisabled(true);
     ui.txt_minFODamp_label->setDisabled(true);
+
+    ui.check_uncertainty->setEnabled(true);
 
 
 }

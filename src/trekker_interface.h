@@ -117,6 +117,7 @@ public:
 	void setSeedRadius(float _seedRadius) {seedRadius=_seedRadius;}
 	void setTubeRadius(float _tubeRadius) {tubeRadius=_tubeRadius;}
 	void setAddedOpacity(float _addedOpacity) {addedOpacity=_addedOpacity;}
+	void setUncertainty(bool _uncertainty) {visualizeUncertainty=_uncertainty;}
     
 
 private:
