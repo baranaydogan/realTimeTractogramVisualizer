@@ -1,5 +1,6 @@
 <RCC version="1.0">
     <qresource prefix="/">
         <file alias="anim.gif">anim.gif</file>
+        <file alias="DejaVuSans.ttf">DejaVuSans.ttf</file>
     </qresource>
 </RCC>
