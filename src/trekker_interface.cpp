@@ -1,6 +1,7 @@
 #include "trekker_interface.h"
 #include "aux.h"
 #include "rttvis_gui.h"
+#include <ostream>
 #include <string>
 #include <utility>
 #include <tuple>
@@ -202,6 +203,8 @@ void vtkTimerCallback::Initialize(
 	currentlyShown 		= 0;
     cycleCounter        = 0;
 	maxAllowedToShow 	= 1000;
+	totStreamlineCnt    = 0;
+	prevStreamlineCnt   = 0;
 
 	batchSize 	= 100;
 	tmpactors 	= new vtkSmartPointer<vtkActor>[batchSize];
@@ -233,6 +236,8 @@ void vtkTimerCallback::Initialize(
 
 	// Update info
     rtt->ui.txt_info->setText("Press 'p' to pause\nPress 'f' to fix seed");
+
+	t_beg = std::chrono::system_clock::now();
 
 	return;
 
@@ -312,10 +317,15 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
             if (cycleCounter==11) cycleCounter=0;
             
             for (int n=0; n<batchSize; n++) {
+
+				if (tmpactors[n]!=NULL)
+					totStreamlineCnt++;
+
                 trackActors.push_back(tmpactors[n]);
                 interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(tmpactors[n]);
             }
-            currentlyShown += batchSize;
+            currentlyShown 		+= batchSize;
+			
 
 			interactor->GetRenderWindow()->Render();
             
@@ -425,14 +435,26 @@ void vtkTimerCallback::Execute(vtkObject*, unsigned long event, void *vtkNotUsed
 
 			if (paused) {
 				timerId = interactor->CreateRepeatingTimer(10);
+				t_beg 			  = std::chrono::system_clock::now();
+				prevStreamlineCnt = totStreamlineCnt;
 				if (!fixed)
 					rtt->ui.txt_info->setText("Press 'p' to pause\nPress 'f' to fix seed");
 				else
 					rtt->ui.txt_info->setText("Press 'p' to pause\nPress 'f' to move seed");
 			}
 			else {
+				t_end = std::chrono::system_clock::now();
+				std::chrono::duration<double> elapsed_seconds = t_end - t_beg;
 				interactor->DestroyTimer(timerId);
-				rtt->ui.txt_info->setText("Press 'p' to resume");
+				std::stringstream ss;
+				ss << std::setprecision(3);
+				ss << "Press 'p' to resume" ;
+				ss << "\n";
+				ss << "Dur: " << elapsed_seconds.count() << "s, " << double(totStreamlineCnt-prevStreamlineCnt)/elapsed_seconds.count() << "#/s";
+
+				rtt->ui.txt_info->setText(QString::fromStdString(ss.str()));
+
+				// rtt->ui.txt_info->setText("Press 'p' to resume");
 			}
 
 			paused = !paused;

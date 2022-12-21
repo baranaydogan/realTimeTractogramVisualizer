@@ -30,6 +30,7 @@
 #include <vtkInteractorStyleTrackballCamera.h>
 
 #include "brainmesh_handler.h"
+#include <chrono>
 
 typedef enum {
 	WHITE,
@@ -125,6 +126,10 @@ private:
 	void* 	rttvis;
 	bool    paused;
 	bool    fixed;
+
+	std::chrono::time_point<std::chrono::system_clock> t_beg, t_end;
+	int     totStreamlineCnt;
+	int     prevStreamlineCnt;
 
 };
 

@@ -3,21 +3,21 @@
 # SET PATHS AND CONFIGURATION
 
 # Path to the cmake executable
-cmakeExe=/home/baran/dev/cmake/bin/cmake
+cmakeExe=cmake
 
 # Path to the compilers
-c_compiler=gcc-8
-cxx_compiler=g++-8
+c_compiler=gcc
+cxx_compiler=g++
 
 # VTK cmake dir
-VTK_DIR=/opt/VTK/VTK-9.1.0-static/lib/cmake/vtk-9.1
+VTK_DIR=/opt/VTK-9.1.0-static/lib/cmake/vtk-9.1
 
 # ACVD cmake dir
-ACVD_DIR=/opt/ACVD/ACVD-static/lib/cmake/ACVD
+ACVD_DIR=/opt/ACVD-static/lib/cmake/ACVD
 
 # Path to Trekker (below is an example)
-trekkerSrc=/home/baran/dev/trekker/src
-trekkerLib=/home/baran/dev/trekker/build/Linux/install/lib
+trekkerSrc=/home/baran/Work/code/trekker/src
+trekkerLib=/home/baran/Work/code/trekker/build/Linux/install/lib
 
 # Release or Debug
 buildType=Release

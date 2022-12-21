@@ -84,6 +84,7 @@ target_link_libraries(rttvis
     	Qt${QT_VERSION_MAJOR}::Widgets
 	${VTK_LIBRARIES}
 	${ACVD_LIBRARIES}
+	/usr/lib/libz.a
 	)
 
 INSTALL(TARGETS rttvis DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../bin)
